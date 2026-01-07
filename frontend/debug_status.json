@@ -1,0 +1,7 @@
+[
+    {
+        "task": "Restart Frontend",
+        "status": "pending",
+        "notes": "Frontend failed to bind to port 5173. Restarting."
+    }
+]
