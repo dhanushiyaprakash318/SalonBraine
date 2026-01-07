@@ -1,76 +1,79 @@
-Talk With Your Data is an AI-powered analytics platform that lets users query databases using natural language.
-Instead of writing SQL manually, users can simply ask:
+SalonBraine is an AI-powered business intelligence system for salon management software.
 
-“Show monthly revenue trend for the last 6 months”
-“Find customers with highest tax contributions”
-“Detect anomalies in recent sales”
+It allows users to ask:
 
-The system intelligently converts the question into safe SQL, executes it on SQLite, and returns:
+"How many customers are there?"
+"What is today's revenue?"
+"Which service is most popular?"
 
-Interactive charts (Line / Bar / Pie)
+And automatically:
 
-Dynamic tables
+Converts the question to SQL using LLaMA (via Ollama)
 
-AI Smart Insights
+Validates the SQL (SELECT-only)
 
-Anomaly Detection
+Executes it on MySQL
 
-This replicates features of tools like Metabase, DataLens, and Power BI, but fully AI-driven.
+Generates:
 
+📊 KPIs
 
-Key Features
-1. Natural Language to SQL
+📈 Charts
 
-Uses local LLM (Ollama + Llama3.1) to convert English queries into SQL.
+🧾 Human-readable English answers
+-----------------------------------------------------------
+Architecture
 
-2. Secure SQL Generation
+User Question (English)
+        ↓
+LLaMA (Text → SQL)
+        ↓
+SQL Validator (SELECT only)
+        ↓
+MySQL Database
+        ↓
+Query Result
+        ↓
+Analytics Engine
+        ↓
+English Answer Generator
+        ↓
+Web Dashboard (Charts + KPIs + Answer)
+-----------------------------------------------------------
+Features
 
-Auto-fix incorrect columns
+✅ Natural language to SQL using LLaMA
 
-Reject unsafe SQL (DROP, UPDATE, DELETE, etc.)
+✅ SQL injection protection (SELECT-only)
 
-Strict schema rules
+✅ Works on live MySQL database
 
-Automatic query cleaning
+✅ Auto KPI generation
 
-3. Smart Insight Engine
+✅ Auto chart generation
 
-Analyzes data values and generates human-friendly insights:
+✅ English language answers
 
-“Revenue is significantly higher than average this month.”
+✅ No raw data exposed to AI model
 
-“Drop detected in sales volume last week.”
+✅ Web dashboard interface
 
-4. Anomaly Detection
+✅ Perfect for internship / demo / BI system
+-----------------------------------------------------------
+Tech Stack
 
-Detects spikes or sudden drops in data trends.
+Backend: Python, FastAPI
 
-5. Multiple Visualizations
+Database: MySQL
 
-Line charts
+AI Model: LLaMA 3.2 (Ollama)
 
-Bar charts
+Frontend: HTML, JavaScript, Chart.js
 
-Pie charts
+Server: Uvicorn
+--------------------------------------------------------------
+Backend : python -m uvicorn main:app --reload
 
-Auto-detect chart type based on response
+Frontend : npm run dev
 
-6. Modern Frontend
-
-Built with React + Tailwind CSS
-
-Clean UI
-
-Dynamic tables
-
-Insight & anomaly alert cards
-
-7. Local LLM Execution (Private & Offline)
-
-Uses Ollama
-
-Supports models like:
-
-llama3.1:8b
-
-llama3.1:3b (faster)
+AI Model : LLaMA 3.2 (Ollama)    ollama serve

@@ -1,0 +1,2 @@
+Generated SQL for 'Which products are low on stock?':
+SELECT i.product_id, i.product_name, CAST(NULLIF(i.volume, '') AS DECIMAL(10,2)) as volume FROM master_inventory i LEFT JOIN billing_trans_inventory ti ON i.id = ti.product_id WHERE CAST(NULLIF(i.volume, '') AS DECIMAL(10,2)) < min_stock_level

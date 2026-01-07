@@ -1,7 +1,4 @@
-try:
-    from database import get_db_connection
-except ImportError:
-    from backend.database import get_db_connection
+from database import get_db_connection
 
 def get_insights():
     try:

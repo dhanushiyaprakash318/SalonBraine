@@ -2,18 +2,20 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 
-try:
-    from nl_sql import generate_sql
-    from sql_runner import run_sql_query
-except ImportError:
-    from backend.nl_sql import generate_sql
-    from backend.sql_runner import run_sql_query
+from nl_sql import generate_sql
+from sql_runner import run_sql_query
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5174"],
+    allow_origins=[
+        "http://localhost:5173", 
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

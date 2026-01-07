@@ -38,19 +38,10 @@ def generate_analysis(question: str, data: list) -> str:
         data_str += f"\n... (and {len(data) - 50} more aggregated records)"
 
     system_prompt = f"""
-    You are a friendly Salon Business Analyst. You receive summary data and translate it into clear, regular English for a salon owner.
-    
-    RULES:
-    1. Respond in 2-3 sentences of regular, friendly English.
-    2. Do NOT mention technical terms like SQL, columns, or tables.
-    3. Focus on the human meaning of the data (e.g., "Business is booming!" or "You might need to restock soon").
-    4. Respond ONLY with a JSON object containing a "summary" field.
-    5. NO markdown, NO extra text.
-
-    FORMAT:
-    {{"summary": "Your regular English answer here..."}}
+    You are a Business Analyst. Summary for: {question}.
+    Respond ONLY with JSON: {{"summary": "..."}}.
+    MAX ONE short sentence. Friendly but concise.
     """
-
     user_prompt = f"""
     User Question: {question}
     Aggregated Results: {data_str}
@@ -66,8 +57,9 @@ def generate_analysis(question: str, data: list) -> str:
                 {'role': 'user', 'content': user_prompt},
             ],
             options={
-                'num_predict': 250,  # Enough for 3-4 insights
-                'temperature': 0.3,  # Slight creativity for business language
+                'num_predict': 50,
+                'temperature': 0,
+                'stop': ["}", "\n"]
             }
         )
         response_text = response['message']['content'].strip()

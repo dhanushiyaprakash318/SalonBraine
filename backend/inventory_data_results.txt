@@ -1,0 +1,14 @@
+Checking first 10 products in master_inventory:
+Product: Opticare mega smooth matrix shampoo | Volume: 200        | Min Stock: 0.00
+Product: Men deserve serum              | Volume: 100        | Min Stock: 0.00
+Product: DAILY HAIR CREAM men deserve   | Volume: 100        | Min Stock: 0.00
+Product: Hair Clay Wax                  | Volume: 75         | Min Stock: 0.00
+Product: Men deserve beard & face wash  | Volume: 100        | Min Stock: 0.00
+Product: Hydra source conditioner       | Volume: 98         | Min Stock: 0.00
+Product: Brillare skin brightening SPF 50 | Volume: 50         | Min Stock: 0.00
+Product: Brillare skin brightening moisturiser | Volume: 50         | Min Stock: 0.00
+Product: Brillare skin brightening face wash | Volume: 100        | Min Stock: 0.00
+Product: COLORLAST conditioner matrix   | Volume: 98         | Min Stock: 0.00
+
+Checking for products where volume < min_stock_level:
+No products found where volume < min_stock_level using CAST.

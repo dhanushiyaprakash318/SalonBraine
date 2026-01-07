@@ -1,9 +1,6 @@
 import os
 import ollama
-try:
-    from database import get_db_connection
-except ImportError:
-    from backend.database import get_db_connection
+from database import get_db_connection
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,15 +42,15 @@ def get_relevant_schema(question: str) -> str:
     
     question_lower = question.lower()
     meta_map = {
-        "master_customer": ["customer", "client", "people", "person"],
-        "billing_transactions": ["sale", "revenue", "income", "money", "spent", "bill", "transaction"],
-        "billing_trans_summary": ["service", "top services", "revenue", "popular"],
-        "master_appointment": ["appointment", "book", "visit"],
+        "master_customer": ["customer", "client", "people", "person", "birthday", "anniversary", "membership", "balance", "visit"],
+        "billing_transactions": ["bill", "billing", "sale", "revenue", "income", "money", "spent", "transaction", "discount", "tax"],
+        "billing_trans_summary": ["service", "top service", "popular", "qty", "spending"],
+        "appointment_transactions": ["appointment", "booking", "slot", "pending", "confirmed", "cancelled", "completed", "balance_due", "payment mode", "peak hour", "busiest"],
+        "appointment_trans_summary": ["appointment", "booking", "service", "appointment date"],
         "master_service": ["service", "treatment", "work"],
         "master_employee": ["staff", "employee", "worker", "specialist"],
-        "master_inventory": ["inventory", "stock", "product", "item", "never sold"],
-        "billing_trans_inventory": ["product", "item", "sold", "never sold"],
-        "master_membership": ["membership", "member", "active"]
+        "master_inventory": ["inventory", "stock", "product", "item", "never sold", "low stock"],
+        "billing_trans_inventory": ["product", "item", "sold", "never sold"]
     }
     
     selected_tables = []
@@ -62,12 +59,12 @@ def get_relevant_schema(question: str) -> str:
             if table in _TABLE_LIST:
                 selected_tables.append(table)
     
-    # Always include transactions for revenue/sales related queries
-    if any(kw in question_lower for kw in ["revenue", "sale", "income"]):
-        selected_tables.extend(["billing_transactions", "billing_trans_summary"])
+    # Always include billing tables for revenue/sales related queries
+    if any(kw in question_lower for kw in ["revenue", "sale", "income", "spending"]):
+        selected_tables.extend([t for t in ["billing_transactions", "billing_trans_summary"] if t in _TABLE_LIST])
     
-    # Remove duplicates and limit
-    selected_tables = list(set([t for t in selected_tables if t in _TABLE_LIST]))[:4]
+    # Remove duplicates and limit to a reasonable set
+    selected_tables = list(dict.fromkeys([t for t in selected_tables if t in _TABLE_LIST]))[:6]
     
     # Default fallback - use first few tables from actual database
     if not selected_tables:
@@ -152,34 +149,27 @@ def generate_sql(question: str) -> str:
     schema = get_relevant_schema(question)
     
     system_prompt = f"""
-    You are an expert MySQL Analyst. Respond ONLY with a JSON object.
+    You are a strict MySQL generator. Respond ONLY with JSON {{"sql": "..."}}.
     
-    BUSINESS RULES:
-    - TOP SERVICES? Use `billing_trans_summary` (service_name, grand_total).
-    - LOW STOCK? Use `master_inventory` WHERE `volume` < `min_stock_level`. 
-    - NEVER SOLD? Use `master_inventory` i LEFT JOIN `billing_trans_inventory` ti ON i.product_id = ti.product_id WHERE ti.id IS NULL.
-    - JOIN KEYS:
-        - `billing_trans_inventory.product_id` matches `master_inventory.product_id`.
-        - `billing_transactions.employee_id` = `master_employee.id`.
-        - `billing_transactions.customer_id` = `master_customer.id`.
-
-    STRICT RULES:
-    1. NEVER mention errors or problems.
-    2. NEVER use the database name "salonpos".
-    3. Response MUST start with {{"sql": "SELECT...
-    4. Provide NO explanation, NO markdown.
-
+    COLUMNS & JOINS:
+    - master_customer: customer_name, gender, visitcnt
+    - master_inventory: product_id, product_name, volume, min_stock_level
+    - billing_trans_inventory: product_id, qty, grand_total
+    - JOIN: master_inventory.product_id = billing_trans_inventory.product_id
+    
+    GOLDEN PATTERNS (STRICT):
+    - LOW STOCK: SELECT product_name, volume, min_stock_level FROM master_inventory WHERE CAST(NULLIF(volume, '') AS DECIMAL(10,2)) < min_stock_level
+    - NEVER SOLD: SELECT i.product_name FROM master_inventory i LEFT JOIN billing_trans_inventory ti ON i.product_id = ti.product_id WHERE ti.id IS NULL
+    - TOP REVENUE: SELECT service_name, SUM(grand_total) as revenue FROM billing_trans_summary GROUP BY service_id, service_name ORDER BY revenue DESC LIMIT 5
+    
+    RULES:
+    1. Response MUST be valid JSON: {{"sql": "SELECT..."}}
+    2. NO explanation. NO markdown.
+    3. Use MySQL syntax.
+    
     SCHEMA:
     {schema}
-
-    EXAMPLES:
-    User: How many customers?
-    {{"sql": "SELECT COUNT(*) FROM master_customer"}}
-
-    User: Top 5 services?
-    {{"sql": "SELECT service_name, SUM(grand_total) as revenue FROM billing_trans_summary GROUP BY service_name ORDER BY revenue DESC LIMIT 5"}}
     """
-
     user_prompt = f"Question: {question}\nRespond with the SQL JSON:"
     
     try:
@@ -194,6 +184,7 @@ def generate_sql(question: str) -> str:
             options={
                 'num_predict': 150,  # Limit output to avoid rambling
                 'temperature': 0,    # Maximize precision for SQL
+                'stop': ["}"]        # Force JSON completion
             }
         )
         
@@ -224,6 +215,10 @@ def generate_sql(question: str) -> str:
             
             if sql and validate_sql_safety(sql):
                 return sql
+            
+            # If the model rambled and stop sequence didn't catch it, try to clean
+            if "sql" in data and isinstance(data["sql"], str):
+                 return extract_sql(data["sql"])
         except json.JSONDecodeError:
             pass
 
@@ -249,13 +244,14 @@ def generate_conversational_response(question: str, context: str = None) -> str:
     schema = get_relevant_schema(question)
     
     system_prompt = f"""
-    You are a friendly Salon Management Assistant. Answer questions in clear, regular English for a salon owner.
+    You are a friendly Salon Management Assistant. Answer questions in ONE concise, non-technical sentence for a salon owner.
     
     RULES:
     1. Be warm, professional and helpful.
-    2. Use 2-3 sentences of regular English.
-    3. Do NOT mention database tables, code, or technical errors (like "SQL", "column mismatch").
-    4. If you don't have the data, suggest a different question or explain what data is missing in a non-technical way.
+    2. EXACTLY ONE simple sentence.
+    3. NO technical terms (SQL, columns, tables, database, schema).
+    4. NO markdown, NO code blocks.
+    5. If data is missing, suggest a simple alternative.
 
     SCHEMA (for your reference only):
     {schema}
@@ -273,8 +269,9 @@ def generate_conversational_response(question: str, context: str = None) -> str:
                 {'role': 'user', 'content': user_prompt},
             ],
             options={
-                'num_predict': 200,  # Enough for a good conversational response
-                'temperature': 0.5,  # Balanced creativity
+                'num_predict': 50,  # Strict limit for one sentence
+                'temperature': 0,    # No creativity for conversational either
+                'stop': ["\n", "."]  # Force cut-off
             }
         )
         

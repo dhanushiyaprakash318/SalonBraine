@@ -1,0 +1,9 @@
+Question: Which products are low on stock?
+SQL: SELECT i.product_id, i.product_name, CAST(NULLIF(i.volume, '') AS DECIMAL(10,2)) AS volume FROM master_inventory i WHERE CAST(NULLIF(i.volume, '') AS DECIMAL(10,2)) < min_stock_level
+
+Question: Show all products
+SQL: SELECT master_inventory.product_name, master_inventory.product_id, master_inventory.retail_code, master_inventory.reference_code, master_inventory.inventory_type, master_inventory.category_id, master_inventory.unit_id, master_inventory.volume, master_inventory.purchase_price, master_inventory.selling_price, master_inventory.hsn_id, master_inventory.tax_id, master_inventory.barcode, master_inventory.min_stock_level, master_inventory.expiry_applicable, master_inventory.expiry_date, master_inventory.display_order, master_inventory.status, master_inventory.created_user, master_inventory.updated_user, master_inventory.created_at, master_inventory.updated_at FROM master_inventory
+
+Question: What is the total revenue?
+SQL: SELECT SUM(billing_trans_summary.total_cgst + billing_trans_summary.total_sgst + billing_trans_summary.total_igst + billing_trans_summary.total_vat) AS total_revenue FROM billing_trans_summary
+
