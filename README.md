@@ -21,8 +21,9 @@ Generates:
 📈 Charts
 
 🧾 Human-readable English answers
+
 -----------------------------------------------------------
-Architecture
+Architecture:
 
 User Question (English)
         ↓
@@ -39,26 +40,26 @@ Analytics Engine
 English Answer Generator
         ↓
 Web Dashboard (Charts + KPIs + Answer)
+
 -----------------------------------------------------------
-Features
+Features:
 
-✅ Natural language to SQL using LLaMA
+Natural language to SQL using LLaMA
 
-✅ SQL injection protection (SELECT-only)
+SQL injection protection (SELECT-only)
 
-✅ Works on live MySQL database
+Works on live MySQL database
 
-✅ Auto KPI generation
+Auto KPI generation
 
-✅ Auto chart generation
+Auto chart generation
 
-✅ English language answers
+English language answers
 
-✅ No raw data exposed to AI model
+No raw data exposed to AI model
 
-✅ Web dashboard interface
+Web dashboard interface
 
-✅ Perfect for internship / demo / BI system
 -----------------------------------------------------------
 Tech Stack
 
@@ -71,6 +72,7 @@ AI Model: LLaMA 3.2 (Ollama)
 Frontend: HTML, JavaScript, Chart.js
 
 Server: Uvicorn
+
 --------------------------------------------------------------
 Backend : python -m uvicorn main:app --reload
 
