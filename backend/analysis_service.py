@@ -18,16 +18,49 @@ def generate_analysis(question: str, data: list) -> str:
     This ensures privacy and follows the workflow requirement.
     """
     if not data:
-        # Generate a friendly "no data" response instead of a generic one
-        try:
-            response = ollama.chat(
-                model=MODEL_NAME,
-                messages=[{'role': 'system', 'content': f"The user asked about '{question}' but there is no data in the system for this. Explain this in one regular, friendly sentence without being technical. Format: {{\"summary\": \"...\"}}"}]
-            )
-            res = json.loads(response['message']['content'])
-            return res.get("summary", "I couldn't find any records matching that request right now.")
-        except:
-            return "I couldn't find any records for that specific request in the database."
+        # Generate a context-aware friendly response based on the question
+        question_lower = question.lower()
+        
+        # Base message for "no records"
+        base_fallback = "Answer not found for this specific query."
+        suggestion_suffix = " You might want to ask about overall revenue trends, top services, or low stock alerts."
+
+        # Provide intelligent responses based on question type
+        keywords_low_stock = ['low stock', 'stock low', 'out of stock', 'inventory low']
+        keywords_never_sold = ['unpopular', 'least popular', 'worst selling', 'never sold', 'not sold', 'zero sales']
+        
+        if any(keyword in question_lower for keyword in keywords_low_stock):
+            return "No low stock items found. All products are currently adequately stocked."
+        elif any(keyword in question_lower for keyword in keywords_never_sold):
+            return "No unsold products found. All items in your inventory have at least one sale record."
+        elif 'revenue' in question_lower or 'sales' in question_lower:
+            return f"{base_fallback} No revenue data was found for the requested criteria. Try asking for 'Total Revenue' or 'Monthly Sales' instead."
+        elif 'customer' in question_lower:
+            return f"{base_fallback} No customer records found matching that criteria. You can ask for 'Total Customers' or 'Recent Visits'."
+        else:
+            # Try to use LLM for more nuanced responses
+            try:
+                response = ollama.chat(
+                    model=MODEL_NAME,
+                    messages=[{
+                        'role': 'user', 
+                        'content': f"User asked: '{question}' but the database returned no results. In 1-2 friendly sentences, explain that the answer wasn't found and suggest 2 related salon metrics they could ask about. Reply with JSON: {{\"summary\": \"your response here\"}}"
+                    }],
+                    options={'num_predict': 60, 'temperature': 0.3}
+                )
+                content = response['message']['content'].strip()
+                # Clean markdown
+                if "```" in content:
+                    content = content.replace("```json", "").replace("```", "").strip()
+                
+                if '{' in content and '}' in content:
+                    json_str = content[content.find("{"):content.rfind("}")+1]
+                    res = json.loads(json_str)
+                    return res.get("summary", f"{base_fallback}{suggestion_suffix}")
+            except:
+                pass
+            
+            return f"{base_fallback}{suggestion_suffix}"
 
     # Convert aggregated data to string representation
     # Data is already aggregated from SQL queries (COUNT, SUM, AVG, GROUP BY, etc.)
@@ -66,6 +99,10 @@ def generate_analysis(question: str, data: list) -> str:
         
         # Parse JSON and extract summary
         try:
+            # Clean markdown
+            if "```" in response_text:
+                response_text = response_text.replace("```json", "").replace("```", "").strip()
+
             if "{" in response_text:
                 json_str = response_text[response_text.find("{"):response_text.rfind("}")+1]
                 data_json = json.loads(json_str)

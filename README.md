@@ -79,3 +79,4 @@ Backend : python -m uvicorn main:app --reload
 Frontend : npm run dev
 
 AI Model : LLaMA 3.2 (Ollama)    ollama serve
+

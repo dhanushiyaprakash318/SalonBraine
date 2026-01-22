@@ -161,11 +161,14 @@ def generate_sql(question: str) -> str:
     - LOW STOCK: SELECT product_name, volume, min_stock_level FROM master_inventory WHERE CAST(NULLIF(volume, '') AS DECIMAL(10,2)) < min_stock_level
     - NEVER SOLD: SELECT i.product_name FROM master_inventory i LEFT JOIN billing_trans_inventory ti ON i.product_id = ti.product_id WHERE ti.id IS NULL
     - TOP REVENUE: SELECT service_name, SUM(grand_total) as revenue FROM billing_trans_summary GROUP BY service_id, service_name ORDER BY revenue DESC LIMIT 5
+    - COMPARISON (Revenue): SELECT 'This Month' as period, SUM(grand_total) as revenue FROM billing_transactions WHERE MONTH(bill_date) = MONTH(CURDATE()) AND YEAR(bill_date) = YEAR(CURDATE()) UNION ALL SELECT 'Last Month', SUM(grand_total) FROM billing_transactions WHERE MONTH(bill_date) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(bill_date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) UNION ALL SELECT 'Last Year', SUM(grand_total) FROM billing_transactions WHERE YEAR(bill_date) = YEAR(CURDATE()) - 1 UNION ALL SELECT 'Total', SUM(grand_total) FROM billing_transactions
     
     RULES:
     1. Response MUST be valid JSON: {{"sql": "SELECT..."}}
     2. NO explanation. NO markdown.
     3. Use MySQL syntax.
+    4. For "comparison", "growth", or "trends" between periods, use UNION ALL to show multiple data points.
+    5. Always use bill_date for revenue time filters.
     
     SCHEMA:
     {schema}
@@ -244,14 +247,17 @@ def generate_conversational_response(question: str, context: str = None) -> str:
     schema = get_relevant_schema(question)
     
     system_prompt = f"""
-    You are a friendly Salon Management Assistant. Answer questions in ONE concise, non-technical sentence for a salon owner.
+    You are a friendly Salon Management Assistant. 
+    
+    CORE GOALS:
+    1. If you can answer the question based on the schema, do so concisely.
+    2. If you CANNOT answer (missing data, non-salon question, vague), say "Answer not found for this specific query" and then suggest 2-3 RELATED things they COULD ask about (e.g., revenue trends, low stock, top services).
+    3. Be warm, professional and helpful.
+    4. Keep it to 2 compact sentences max.
     
     RULES:
-    1. Be warm, professional and helpful.
-    2. EXACTLY ONE simple sentence.
-    3. NO technical terms (SQL, columns, tables, database, schema).
-    4. NO markdown, NO code blocks.
-    5. If data is missing, suggest a simple alternative.
+    - NO technical terms (SQL, columns, tables, database, schema).
+    - NO markdown, NO code blocks.
 
     SCHEMA (for your reference only):
     {schema}
@@ -269,9 +275,9 @@ def generate_conversational_response(question: str, context: str = None) -> str:
                 {'role': 'user', 'content': user_prompt},
             ],
             options={
-                'num_predict': 50,  # Strict limit for one sentence
+                'num_predict': 80,  # Limit for 2 sentences
                 'temperature': 0,    # No creativity for conversational either
-                'stop': ["\n", "."]  # Force cut-off
+                'stop': ["\n"]       # Force cut-off
             }
         )
         
