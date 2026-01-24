@@ -1,0 +1,24 @@
+--- Debugging Question: 'Show revenue trend for last 6 months' ---
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+
+[GENERATED SQL]:
+SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(grand_total) as revenue FROM billing_transactions WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) GROUP BY month ORDER BY month DESC LIMIT 5
+[OK] DATABASE CONNECTED
+
+[SQL RESULTS (2 rows)]:
+     month   revenue
+0  2025-12  3078.500
+1  2025-11      None
+
+--- Checking Base Data in billing_transactions ---
+[OK] DATABASE CONNECTED
+Total rows in billing_transactions: 327
+Date Range: 2025-11-17 16:10:48 to 2025-12-13 11:21:08
+
+Latest 5 Transactions:
+(547, Decimal('350.000'), datetime.datetime(2025, 12, 13, 11, 21, 8))
+(546, Decimal('350.000'), datetime.datetime(2025, 12, 13, 10, 39, 28))
+(545, Decimal('500.000'), datetime.datetime(2025, 12, 13, 10, 14, 47))
+(544, Decimal('304.000'), datetime.datetime(2025, 12, 12, 21, 19, 38))
+(543, Decimal('200.000'), datetime.datetime(2025, 12, 12, 21, 14, 57))

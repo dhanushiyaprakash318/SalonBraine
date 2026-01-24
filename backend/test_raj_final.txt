@@ -1,0 +1,13 @@
+
+Question: Show details for customer John Doe
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer WHERE customer_name LIKE '%John Doe%'
+
+Question: How many times has Alice visited?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT visitcnt FROM master_customer WHERE customer_name LIKE '%Alice%'
+
+Question: What is the total spending of Bob?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT SUM(grand_total) as spending FROM billing_transactions WHERE customer_name LIKE '%Bob%'

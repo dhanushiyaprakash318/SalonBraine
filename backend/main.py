@@ -6,6 +6,7 @@ from nl_sql import generate_sql
 from sql_runner import run_sql_query
 
 app = FastAPI()
+# Reload trigger
 
 app.add_middleware(
     CORSMiddleware,

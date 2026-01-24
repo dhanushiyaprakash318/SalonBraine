@@ -145,7 +145,39 @@ def extract_sql(text: str) -> str:
     
     return sql
 
+def preprocess_question(question: str) -> str:
+    """
+    Simple rule-based preprocessor to fix common typos and normalize input.
+    """
+    # Map of common typos/abbreviations to correct terms
+    corrections = {
+        "compae": "compare",
+        "compar": "compare",
+        "vs": "compare",
+        "versus": "compare",
+        "rvnue": "revenue",
+        "revnue": "revenue",
+        "revenu": "revenue",
+        "custmer": "customer",
+        "cutomer": "customer",
+        "biling": "billing",
+        "transac": "transaction"
+    }
+    
+    words = question.split()
+    fixed_words = [corrections.get(w.lower(), w) for w in words]
+    return " ".join(fixed_words)
+
 def generate_sql(question: str) -> str:
+    # 1. Preprocess the question to fix typos
+    question = preprocess_question(question)
+    
+    # 2. DETERMINISTIC RULES (Fast Path for complex common queries)
+    # Revenue Comparison: "Compare this month revenue with last month"
+    # Uses 'created_at' and robust UNION ALL structure
+    if "compare" in question.lower() and "revenue" in question.lower() and "month" in question.lower():
+        return "SELECT 'This Month' as period, COALESCE(SUM(grand_total), 0) as revenue FROM billing_transactions WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) UNION ALL SELECT 'Last Month', COALESCE(SUM(grand_total), 0) FROM billing_transactions WHERE MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) UNION ALL SELECT 'Last Year', COALESCE(SUM(grand_total), 0) FROM billing_transactions WHERE YEAR(created_at) = YEAR(CURDATE()) - 1 UNION ALL SELECT 'Total', COALESCE(SUM(grand_total), 0) FROM billing_transactions"
+    
     schema = get_relevant_schema(question)
     
     system_prompt = f"""
@@ -158,17 +190,22 @@ def generate_sql(question: str) -> str:
     - JOIN: master_inventory.product_id = billing_trans_inventory.product_id
     
     GOLDEN PATTERNS (STRICT):
+    - CUSTOMER PROFILE: SELECT * FROM master_customer WHERE customer_name LIKE '%Customer Name%'
+    - CUSTOMER SPENDING: SELECT SUM(grand_total) as spending FROM billing_transactions WHERE customer_name LIKE '%Customer Name%'
+    - CUSTOMER VISITS: SELECT visitcnt FROM master_customer WHERE customer_name LIKE '%Customer Name%'
     - LOW STOCK: SELECT product_name, volume, min_stock_level FROM master_inventory WHERE CAST(NULLIF(volume, '') AS DECIMAL(10,2)) < min_stock_level
     - NEVER SOLD: SELECT i.product_name FROM master_inventory i LEFT JOIN billing_trans_inventory ti ON i.product_id = ti.product_id WHERE ti.id IS NULL
     - TOP REVENUE: SELECT service_name, SUM(grand_total) as revenue FROM billing_trans_summary GROUP BY service_id, service_name ORDER BY revenue DESC LIMIT 5
-    - COMPARISON (Revenue): SELECT 'This Month' as period, SUM(grand_total) as revenue FROM billing_transactions WHERE MONTH(bill_date) = MONTH(CURDATE()) AND YEAR(bill_date) = YEAR(CURDATE()) UNION ALL SELECT 'Last Month', SUM(grand_total) FROM billing_transactions WHERE MONTH(bill_date) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(bill_date) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) UNION ALL SELECT 'Last Year', SUM(grand_total) FROM billing_transactions WHERE YEAR(bill_date) = YEAR(CURDATE()) - 1 UNION ALL SELECT 'Total', SUM(grand_total) FROM billing_transactions
+    - REVENUE TREND: SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(grand_total) as revenue FROM billing_transactions WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) GROUP BY month ORDER BY month DESC
+    - COMPARISON (Revenue): SELECT 'This Month' as period, SUM(grand_total) as revenue FROM billing_transactions WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) UNION ALL SELECT 'Last Month', SUM(grand_total) FROM billing_transactions WHERE MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) UNION ALL SELECT 'Last Year', SUM(grand_total) FROM billing_transactions WHERE YEAR(created_at) = YEAR(CURDATE()) - 1 UNION ALL SELECT 'Total', SUM(grand_total) FROM billing_transactions
     
     RULES:
     1. Response MUST be valid JSON: {{"sql": "SELECT..."}}
     2. NO explanation. NO markdown.
     3. Use MySQL syntax.
-    4. For "comparison", "growth", or "trends" between periods, use UNION ALL to show multiple data points.
-    5. Always use bill_date for revenue time filters.
+    4. For customer name searches, ALWAYS use LIKE '%name%' instead of '=' to handle spaces and partial matches.
+    5. For "comparison", "growth", or "trends" between periods, use UNION ALL to show multiple data points.
+    6. Always use created_at for revenue time filters.
     
     SCHEMA:
     {schema}
@@ -185,7 +222,7 @@ def generate_sql(question: str) -> str:
                 {'role': 'user', 'content': user_prompt},
             ],
             options={
-                'num_predict': 150,  # Limit output to avoid rambling
+                'num_predict': 400,  # Limit output to avoid rambling
                 'temperature': 0,    # Maximize precision for SQL
                 'stop': ["}"]        # Force JSON completion
             }

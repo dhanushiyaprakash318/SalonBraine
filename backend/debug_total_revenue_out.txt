@@ -1,0 +1,22 @@
+--- DEBUGGING TOTAL REVENUE ---
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+
+1. Generated SQL for 'total revenue':
+SELECT SUM(grand_total) as revenue FROM billing_transactions WHERE created_at >= (SELECT MAX(created_at) FROM billing_transactions)
+[OK] DATABASE CONNECTED
+Result: [{'revenue': Decimal('350.000')}]
+
+2. RAW QUERIES:
+[OK] DATABASE CONNECTED
+  Grand Total (No filters): {'val': Decimal('3078.500')}
+[OK] DATABASE CONNECTED
+  With billstatus='Y': {'val': Decimal('2844.500')}
+[OK] DATABASE CONNECTED
+  With billstatus IS NULL: {'val': None}
+[OK] DATABASE CONNECTED
+  With billstatus!='C' (Not Cancelled): {'val': Decimal('3078.500')}
+[OK] DATABASE CONNECTED
+  Using billing_trans_summary instead: {'val': Decimal('106168.500')}
+[OK] DATABASE CONNECTED
+  This Month Only: {'val': None}

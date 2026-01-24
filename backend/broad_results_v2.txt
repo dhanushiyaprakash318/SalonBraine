@@ -1,0 +1,22 @@
+--- Testing Broad Customer Queries ---
+
+Question: show customer raj
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer WHERE customer_name LIKE '%Raj%'
+
+Question: show customer mithi
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer WHERE customer_name LIKE '%Customer Name%'
+
+Question: List all customers
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer
+
+Question: How many customers do we have?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT COUNT(*) FROM master_customer
+
+Question: Details for customer Alice
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer WHERE customer_name LIKE '%Alice%'

@@ -26,7 +26,7 @@ def generate_analysis(question: str, data: list) -> str:
         suggestion_suffix = " You might want to ask about overall revenue trends, top services, or low stock alerts."
 
         # Provide intelligent responses based on question type
-        keywords_low_stock = ['low stock', 'stock low', 'out of stock', 'inventory low']
+        keywords_low_stock = ['low stock', 'stock low', 'out of stock', 'inventory low', 'low on stock', 'running low']
         keywords_never_sold = ['unpopular', 'least popular', 'worst selling', 'never sold', 'not sold', 'zero sales']
         
         if any(keyword in question_lower for keyword in keywords_low_stock):

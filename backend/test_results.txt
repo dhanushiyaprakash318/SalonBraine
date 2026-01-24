@@ -1,0 +1,13 @@
+
+Question: Show details for customer John Doe
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer WHERE customer_name = 'John Doe'
+
+Question: How many times has Alice visited?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT COUNT(*) FROM master_customer WHERE customer_name = 'Alice'
+
+Question: What is the total spending of Bob?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT SUM(billing_trans_summary.total_cgst) FROM billing_transactions AS t1 INNER JOIN appointment_transactions AS t2 ON t1.appointment_id = t2.appointment_id WHERE t1.customer_name = 'Bob'

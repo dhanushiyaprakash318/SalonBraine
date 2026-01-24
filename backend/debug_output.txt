@@ -1,0 +1,55 @@
+--- DEBUGGING REVENUE DATA ---
+Traceback (most recent call last):
+[OK] DATABASE CONNECTED
+
+1. Date Range in billing_transactions:
+[{'first_date': datetime.datetime(2025, 11, 17, 16, 10, 48), 'last_date': datetime.datetime(2025, 12, 13, 11, 21, 8), 'count': 327}]
+
+2. Data for This Month (Jan 2026):
+Rows found: 0
+
+3. Generated SQL for 'Compare revenue':
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT 'This Month' as period, SUM(grand_total) as revenue FROM billing_transactions WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE()) UNION ALL SELECT 'Last Month', SUM(grand_total) FROM billing_transactions WHERE MONTH(created_at) = MONTH(DATE_SUB(CURDATE(), INTERVAL 1 MONTH)) AND YEAR(created_at) = YEAR(DATE_SUB(CURDATE(), INTERVAL 1 MONTH"))
+
+4. Execution Result:
+[OK] DATABASE CONNECTED
+  File "D:\SalonBraine\backend\debug_revenue_nulls.py", line 47, in <module>
+    debug_revenue()
+    ~~~~~~~~~~~~~^^
+  File "D:\SalonBraine\backend\debug_revenue_nulls.py", line 39, in debug_revenue
+    results = run_sql_query(sql)
+  File "D:\SalonBraine\backend\sql_runner.py", line 6, in run_sql_query
+    cursor.execute(sql)
+    ~~~~~~~~~~~~~~^^^^^
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\cursor.py", line 416, in execute
+    self._connection.cmd_query(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self._stmt_partition["mappable_stmt"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        read_timeout=self._read_timeout,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        write_timeout=self._write_timeout,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\opentelemetry\context_propagation.py", line 106, in wrapper
+    result = method(cnx, *args, **kwargs)
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\_decorating.py", line 89, in handle_cnx_method
+    raise err
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\_decorating.py", line 85, in handle_cnx_method
+    return cnx_method(cnx, *args, **kwargs)
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\connection.py", line 984, in cmd_query
+    result = self._handle_result(
+        self._send_cmd(
+    ...<6 lines>...
+        write_timeout,
+    )
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\_decorating.py", line 89, in handle_cnx_method
+    raise err
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\_decorating.py", line 85, in handle_cnx_method
+    return cnx_method(cnx, *args, **kwargs)
+  File "C:\Users\adivy\AppData\Roaming\Python\Python313\site-packages\mysql\connector\connection.py", line 745, in _handle_result
+    raise get_exception(packet)
+mysql.connector.errors.ProgrammingError: 1064 (42000): You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near '"))' at line 1

@@ -1,0 +1,18 @@
+
+Question: Show details for customer John Doe
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT * FROM master_customer WHERE customer_name = 'John Doe'
+
+Question: How many times has Alice visited?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT visitcnt FROM master_customer WHERE customer_name = 'Alice'
+
+Question: What is the total spending of Bob?
+Attempting with Ollama Model: llama3.2:1b
+SQL: SELECT SUM(grand_total) as spending FROM billing_trans_summary WHERE customer_name = 'Bob'
+Testing SQL Generation for: 'Show revenue trend for last 6 months'
+[OK] DATABASE CONNECTED
+Attempting with Ollama Model: llama3.2:1b
+Generated SQL: SELECT DATE_FORMAT(created_at, '%Y-%m') as month, SUM(grand_total) as revenue FROM billing_transactions WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH) GROUP BY month ORDER BY month DESC LIMIT 5
+SUCCESS: Valid SQL generated.
